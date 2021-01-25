@@ -3,21 +3,41 @@ import React, { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 import './RegisterPage.css';
+import 'bootstrap/dist/css/bootstrap.min.css';
+var md5 = require('md5');
 
 export default function RegisterPage() {
   const { register, handleSubmit, watch, errors } = useForm();
   const [errorFromSubmit, setErrorFromSubmit] = useState('');
+  const [loading, setLoading] = useState(false);
   const password = useRef();
   password.current = watch('password');
 
   const onSubmit = async data => {
     try {
+      setLoading(true);
+      // 유저 생성
       let createdUser = await firebase
         .auth()
         .createUserWithEmailAndPassword(data.email, data.password);
+
+      // 상세 프로필 추가
+      await createdUser.user.updateProfile({
+        displayName: data.name,
+        photoURL: `http://gravatar.com/avatar/${md5(data.email)}?d=identicon`, // md5로 랜덤 프로필 이미지 생성해서 부여
+      });
+
+      // 데이터베이스에 저장
+      await firebase.database().ref('users').child(createdUser.user.uid).set({
+        name: createdUser.user.displayName,
+        image: createdUser.user.photoURL,
+      });
+
       console.log(createdUser);
+      setLoading(false);
     } catch (error) {
       setErrorFromSubmit(error.message);
+      setLoading(false);
       setTimeout(() => {
         setErrorFromSubmit('');
       }, 5000);
@@ -83,11 +103,33 @@ export default function RegisterPage() {
           <p> 비밀번호 확인은 비밀번호와 일치해야 합니다. </p>
         )}
         {errorFromSubmit && <p>{errorFromSubmit}</p>}
-        <input
-          style={{ fontWeight: 'bold', textDecoration: 'none' }}
-          type='submit'
-          value='Create account'
-        />
+
+        {!loading ? (
+          <input
+            style={{ fontWeight: 'bold', textDecoration: 'none' }}
+            type='submit'
+            value='Create account'
+          />
+        ) : (
+          <div>
+            <input
+              style={{ fontWeight: 'bold', textDecoration: 'none' }}
+              type='submit'
+              disabled
+              value='Creating account...'
+            />
+
+            {/* <button className='btn btn-primary' type='button' disabled>
+              <span
+                className='spinner-border spinner-border-sm'
+                role='status'
+                aria-hidden='true'
+              ></span>
+              Loading...
+            </button> */}
+          </div>
+        )}
+
         <Link style={{ color: 'gray', textDecoration: 'none' }} to='/login'>
           이미 아이디가 있으신가요?
         </Link>
