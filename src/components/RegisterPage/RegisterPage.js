@@ -1,14 +1,28 @@
-import React, { useRef } from 'react';
+import firebase from '../../firebase';
+import React, { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 import './RegisterPage.css';
 
 export default function RegisterPage() {
   const { register, handleSubmit, watch, errors } = useForm();
+  const [errorFromSubmit, setErrorFromSubmit] = useState('');
   const password = useRef();
   password.current = watch('password');
 
-  const onSubmit = data => console.log(data);
+  const onSubmit = async data => {
+    try {
+      let createdUser = await firebase
+        .auth()
+        .createUserWithEmailAndPassword(data.email, data.password);
+      console.log(createdUser);
+    } catch (error) {
+      setErrorFromSubmit(error.message);
+      setTimeout(() => {
+        setErrorFromSubmit('');
+      }, 5000);
+    }
+  };
 
   console.log(watch('password')); // you can watch individual input by pass the name of the input
 
@@ -68,7 +82,7 @@ export default function RegisterPage() {
         {errors.password_confirm?.type === 'validate' && (
           <p> 비밀번호 확인은 비밀번호와 일치해야 합니다. </p>
         )}
-
+        {errorFromSubmit && <p>{errorFromSubmit}</p>}
         <input
           style={{ fontWeight: 'bold', textDecoration: 'none' }}
           type='submit'
