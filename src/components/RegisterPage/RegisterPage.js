@@ -36,7 +36,8 @@ export default function RegisterPage() {
       console.log(createdUser);
       setLoading(false);
     } catch (error) {
-      setErrorFromSubmit(error.message);
+      console.log(error);
+      setErrorFromSubmit(`ERROR : ${error.message}`);
       setLoading(false);
       setTimeout(() => {
         setErrorFromSubmit('');
