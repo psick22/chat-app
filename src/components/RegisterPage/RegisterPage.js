@@ -1,12 +1,13 @@
 import firebase from '../../firebase';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Link } from 'react-router-dom';
+import { Link, useHistory } from 'react-router-dom';
 import './RegisterPage.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 var md5 = require('md5');
 
-export default function RegisterPage() {
+export default function RegisterPage(props) {
+  const history = useHistory();
   const { register, handleSubmit, watch, errors } = useForm();
   const [errorFromSubmit, setErrorFromSubmit] = useState('');
   const [loading, setLoading] = useState(false);
@@ -45,6 +46,18 @@ export default function RegisterPage() {
     }
   };
 
+  useEffect(() => {
+    firebase.auth().onAuthStateChanged(user => {
+      console.log('user', user);
+      if (user) {
+        // 로그인이 된 상태
+        // @ts-ignore
+        history.push('/');
+      } else {
+        history.push('/login');
+      }
+    });
+  }, []);
   console.log(watch('password')); // you can watch individual input by pass the name of the input
 
   return (

@@ -1,10 +1,11 @@
 import firebase from '../../firebase';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Link } from 'react-router-dom';
+import { Link, useHistory } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-export default function LoginPage() {
+export default function LoginPage(props) {
+  const history = useHistory();
   const { register, handleSubmit, watch, errors } = useForm();
   const [errorFromSubmit, setErrorFromSubmit] = useState('');
   const [loading, setLoading] = useState(false);
@@ -15,9 +16,9 @@ export default function LoginPage() {
       await firebase
         .auth()
         .signInWithEmailAndPassword(data.email, data.password);
+
       setLoading(false);
     } catch (error) {
-      console.log(error);
       setErrorFromSubmit(`ERROR : ${error.message}`);
       setLoading(false);
       setTimeout(() => {
@@ -25,6 +26,17 @@ export default function LoginPage() {
       }, 5000);
     }
   };
+
+  useEffect(() => {
+    firebase.auth().onAuthStateChanged(user => {
+      console.log('user', user);
+      if (user) {
+        // 로그인이 된 상태
+        // @ts-ignore
+        history.push('/');
+      }
+    });
+  }, []);
 
   return (
     <div className='auth-wrapper'>
