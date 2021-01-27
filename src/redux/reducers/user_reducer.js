@@ -1,5 +1,5 @@
 /* eslint-disable import/no-anonymous-default-export */
-import { SET_USER } from '../actions/types';
+import { CLEAR_USER, SET_USER } from '../actions/types';
 
 const initialUserState = {
   currentUser: null,
@@ -12,6 +12,12 @@ export default function (state = initialUserState, action) {
       return {
         ...state,
         currentUser: action.payload,
+        isLoading: false,
+      };
+    case CLEAR_USER:
+      return {
+        ...state,
+        currentUser: null,
         isLoading: false,
       };
     default:
