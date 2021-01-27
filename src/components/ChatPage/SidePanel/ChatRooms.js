@@ -4,24 +4,42 @@ import React, { Component } from 'react';
 import { Button, Form, Modal } from 'react-bootstrap';
 import { FaRegSmileWink, FaPlus } from 'react-icons/fa';
 import { connect } from 'react-redux';
+import { setCurrentChatRoom } from '../../../redux/actions/chatRoom_action';
 export class ChatRooms extends Component {
   state = {
     show: false,
     name: '',
     description: '',
     chatRoomsRef: firebase.database().ref('chatRooms'),
+    chatRooms: [],
+    firstLoad: true,
+    activeChatRoomId: '',
   };
 
   componentDidMount() {
     this.AddChatRoomsListeners();
   }
 
+  componentWillUnmount() {
+    this.state.chatRoomsRef.off(); // 컴포넌트 언마운트 직전에 데이터베이스 이벤트 리스너 제거
+  }
+
+  setFirstChatRoom = () => {
+    const firstChatRoom = this.state.chatRooms[0];
+    if (this.state.firstLoad && this.state.chatRooms.length > 0) {
+      this.props.dispatch(setCurrentChatRoom(firstChatRoom));
+      this.setState({ activeChatRoomId: firstChatRoom.id });
+    }
+    this.setState({ firstLoad: false });
+  };
+
   AddChatRoomsListeners = () => {
     let chatRoomsArray = [];
     this.state.chatRoomsRef.on('child_added', DataSnapshot => {
       chatRoomsArray.push(DataSnapshot.val());
-      this.setState({ chatRooms: chatRoomsArray });
-      console.log('등록', this.state.chatRooms);
+      this.setState({ chatRooms: chatRoomsArray }, () =>
+        this.setFirstChatRoom(),
+      );
     });
   };
 
@@ -77,6 +95,11 @@ export class ChatRooms extends Component {
       </li>
     ));
 
+  changeChatRoom = room => {
+    this.props.dispatch(setCurrentChatRoom(room));
+    this.setState({ activeChatRoomId: room.id });
+  };
+
   render() {
     return (
       <div>
@@ -96,7 +119,6 @@ export class ChatRooms extends Component {
           />
         </div>
         <ul style={{ listStyleType: 'none', padding: 0 }}>
-          <li>테스트</li>
           {this.renderChatRooms(this.state.chatRooms)}
         </ul>
 
