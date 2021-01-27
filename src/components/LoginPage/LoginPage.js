@@ -13,6 +13,7 @@ export default function LoginPage(props) {
   const onSubmit = async data => {
     try {
       setLoading(true);
+
       await firebase
         .auth()
         .signInWithEmailAndPassword(data.email, data.password);
@@ -26,17 +27,6 @@ export default function LoginPage(props) {
       }, 5000);
     }
   };
-
-  useEffect(() => {
-    firebase.auth().onAuthStateChanged(user => {
-      console.log('user', user);
-      if (user) {
-        // 로그인이 된 상태
-        // @ts-ignore
-        history.push('/');
-      }
-    });
-  }, []);
 
   return (
     <div className='auth-wrapper'>
