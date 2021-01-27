@@ -7,6 +7,7 @@ import firebase from 'firebase';
 import { setPhotoURL } from '../../../redux/actions/user_action';
 
 function UserPanel() {
+  // @ts-ignore
   const user = useSelector(state => state.user.currentUser);
 
   const dispatch = useDispatch();
