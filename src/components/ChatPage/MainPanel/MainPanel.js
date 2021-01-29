@@ -7,6 +7,8 @@ export class MainPanel extends Component {
   render() {
     return (
       <div style={{ padding: '2rem 2rem 0 2rem' }}>
+        <MessageHeader />
+
         <Message />
         <div
           style={{
@@ -18,7 +20,6 @@ export class MainPanel extends Component {
             overflowY: 'auto',
           }}
         ></div>
-        <MessageHeader />
         <MessageForm />
       </div>
     );
