@@ -3,13 +3,20 @@ import { FaRegSmileWink, FaPlus } from 'react-icons/fa';
 import { Modal, Button, Form } from 'react-bootstrap';
 import { connect } from 'react-redux';
 import firebase from '../../../firebase';
+import {
+  setCurrentChatRoom,
+  setPrivateChatRoom,
+} from '../../../redux/actions/chatRoom_action';
 
 export class DirectMessages extends Component {
-  //TODO 유저의 아이디와 로그인 상태 표시 필요 (일단은 회원가입된 모든 유저)
   state = {
     usersArray: [],
     usersRef: firebase.database().ref('users'),
+    chatRoomsRef: firebase.database().ref('chatRooms'),
+    activeChatRoom: '',
   };
+
+  //TODO 유저의 아이디와 로그인 상태 표시 필요 (일단은 회원가입된 모든 유저)
 
   componentDidMount() {
     const { user } = this.props;
@@ -25,12 +32,38 @@ export class DirectMessages extends Component {
     usersArray = usersArray?.map(user => {
       console.log(user);
       return (
-        <li key={user.uid} onClick>
-          # {user.name}
+        <li
+          key={user.uid}
+          style={{
+            backgroundColor:
+              user.uid === this.state.activeChatRoom && '#ffffff45',
+          }}
+          onClick={e => this.changeChatRoom(user)}
+        >
+          @ {user.name}
         </li>
       );
     });
     return usersArray;
+  };
+
+  // NOTE 두 유저 간의 고유한 대화방 생성 로직
+  changeChatRoom = targetUser => {
+    const { user } = this.props;
+
+    const chatRoomId = this.getChatRoomId(user.uid, targetUser.uid);
+    const chatRoomData = {
+      id: chatRoomId,
+      name: targetUser.name,
+    };
+    this.props.dispatch(setCurrentChatRoom(chatRoomData));
+    this.props.dispatch(setPrivateChatRoom(true));
+    this.setState({ activeChatRoom: targetUser.uid });
+  };
+
+  getChatRoomId = (uid1, uid2) => {
+    console.log(uid1, uid2);
+    return uid1 > uid2 ? `${uid1}-${uid2}` : `${uid2}-${uid1}`;
   };
 
   addUsersListener = currentUserUid => {
@@ -51,6 +84,8 @@ export class DirectMessages extends Component {
     });
   };
 
+  // TODO 로그인 했을 때 DM 방이 바로 안뜨고 새로고침해야 뜨는데 이거 고쳐야됨
+
   render() {
     return (
       <div>
@@ -64,51 +99,10 @@ export class DirectMessages extends Component {
         >
           <FaRegSmileWink style={{ marginRight: 3 }} />
           DIRECT MESSAGES{''} (1)
-          <FaPlus
-            onClick={this.handleShow}
-            style={{ position: 'absolute', right: 0, cursor: 'pointer' }}
-          />
         </div>
         <ul style={{ listStyleType: 'none', padding: 0 }}>
           {this.renderDirectMessages(this.state.usersArray)}
         </ul>
-
-        {/* Add Chat Room Modal */}
-
-        <Modal show={this.state.show} onHide={this.handleClose}>
-          <Modal.Header closeButton>
-            <Modal.Title>새 채팅방 생성하기</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <Form onSubmit={this.handleSubmit}>
-              <Form.Group controlId='formBasicEmail'>
-                <Form.Label>채팅방 이름</Form.Label>
-                <Form.Control
-                  type='text'
-                  placeholder='채팅방 이름을 입력해주세요'
-                  onChange={e => this.setState({ name: e.target.value })}
-                />
-              </Form.Group>
-
-              <Form.Group controlId='formBasicPassword'>
-                <Form.Label>채팅방 설명</Form.Label>
-                <Form.Control
-                  type='text'
-                  placeholder='채팅방 설명을 입력해주세요'
-                  onChange={e => this.setState({ description: e.target.value })}
-                />
-              </Form.Group>
-            </Form>
-          </Modal.Body>
-          <Modal.Footer>
-            <Button variant='secondary' onClick={this.handleClose}>
-              취소
-            </Button>
-            <Button variant='primary' onClick={this.handleSubmit}>
-              채팅방 생성
-            </Button>
-          </Modal.Footer>
-        </Modal>
       </div>
     );
   }

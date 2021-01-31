@@ -19,9 +19,9 @@ function SidePanel() {
 
       <Favorited />
 
-      <DirectMessages />
-
       <ChatRooms />
+
+      <DirectMessages />
     </div>
   );
 }
