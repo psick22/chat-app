@@ -1,7 +1,8 @@
 import firebase from 'firebase';
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Button, Col, Form, ProgressBar, Row } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
+import mime from 'mime-types';
 
 function MessageForm() {
   const [isValid, setIsValid] = useState(false);
@@ -12,6 +13,7 @@ function MessageForm() {
   const [fileUrl, setFileUrl] = useState('');
   const textInput = useRef(null);
   const fileInputRef = useRef(null);
+  const [progress, setProgress] = useState(0);
 
   const currentChatRoom = useSelector(state => state.chatRoom.currentChatRoom);
   const currentUser = useSelector(state => state.user.currentUser);
@@ -28,14 +30,18 @@ function MessageForm() {
       },
     };
     const message = {
-      userUid: currentUser.uid,
-      userDisplayName: currentUser.displayName,
+      user: {
+        userUid: currentUser.uid,
+        userDisplayName: currentUser.displayName,
+        userImage: currentUser.photoURL,
+      },
       timestamp: timestamp,
       content: text,
     };
 
     if (fileUrl !== null) {
       message['files'] = fileUrl;
+      message['content'] = `${fileUrl}\n` + text;
     }
 
     return { userInfo, message };
@@ -46,17 +52,20 @@ function MessageForm() {
 
     try {
       const { userInfo, message } = createMessage();
-      const messagekey = await messagesRef
+
+      const messagekey = messagesRef
         .child(`${currentChatRoom.id}/message`)
         .push().key;
+
+      console.log(messagekey);
+      let updates = {};
+      updates[`${currentChatRoom.id}/message/${messagekey}`] = message;
 
       await messagesRef
         .child(`${currentChatRoom.id}/users/${currentUser.uid}`)
         .set(userInfo);
 
-      await messagesRef
-        .child(`${currentChatRoom.id}/message/${messagekey}`)
-        .update(message);
+      await messagesRef.update(updates);
 
       setLoading(false);
       setText('');
@@ -66,6 +75,40 @@ function MessageForm() {
     } catch (error) {
       setErrors(prevState => prevState.concat(error.message));
       console.log(error);
+      setLoading(false);
+    }
+  };
+
+  const handleSubmitFiles = async fileUrl => {
+    setLoading(true);
+
+    try {
+      const { userInfo, message } = createMessage(fileUrl);
+
+      const messagekey = messagesRef
+        .child(`${currentChatRoom.id}/message`)
+        .push().key;
+
+      console.log(messagekey);
+      let updates = {};
+      updates[`${currentChatRoom.id}/message/${messagekey}`] = message;
+
+      await messagesRef
+        .child(`${currentChatRoom.id}/users/${currentUser.uid}`)
+        .set(userInfo);
+
+      await messagesRef.update(updates);
+
+      setLoading(false);
+      setText('');
+      setIsValid(false);
+      setErrors([]);
+      setProgress(0);
+      textInput.current.focus();
+    } catch (error) {
+      setErrors(prevState => prevState.concat(error.message));
+      console.log(error);
+      setLoading(false);
     }
   };
 
@@ -78,35 +121,47 @@ function MessageForm() {
     try {
       setFileLoading(true);
       console.log(e);
-      // NOTE storage에 올리고 다운로드 url 받아오기
       // TODO 파일명에 확장자 달아줘서 다운로드 받으면 바로 열수 있게
       if (!e.target.files[0]) {
         console.log('undefine filed');
       } else {
+        // NOTE storage에 올리고 다운로드 url 받아오기
         let timestamp = new Date().getTime();
         const files = e.target.files && e.target.files[0];
-        console.log(files);
         const metadata = {
-          contentType: files.type,
+          contentType: mime.lookup(files.name),
         };
 
-        let uploadFileSnapshot = await storageRef
-          .child(`files/${currentChatRoom.id}/${timestamp}`)
-          .put(files, metadata);
-        console.log('upload done', uploadFileSnapshot);
+        let uploadTask = await storageRef
+          .child(`files/${currentChatRoom.id}/${timestamp}-${files.name}`)
+          .put(files, metadata)
+          .on(
+            'state_changed',
+            TaskSnapshot => {
+              let progress = Math.round(
+                (TaskSnapshot.bytesTransferred / TaskSnapshot.totalBytes) * 100,
+              );
+              console.log(progress);
+              setProgress(progress);
+            },
+            error => {
+              console.log(error);
+            },
+            complete => {
+              storageRef
+                .child(`files/${currentChatRoom.id}/${timestamp}-${files.name}`)
+                .getDownloadURL()
+                .then(res => {
+                  console.log('url', res);
+                  handleSubmitFiles(res);
+                })
+                .catch(error => console.log(error));
+            },
+          );
 
-        let path = await storageRef
-          .child(`files/${currentChatRoom.id}/${timestamp}`)
-          .getDownloadURL();
+        console.log('upload done', uploadTask);
 
         // TODO 받아온 url 채팅창에 파일이름으로 입력하고 (TODO)링크 (이게되나?)
-
-        setFileUrl(path);
-        console.log(path);
-        const newText = text + files.name;
-        console.log(newText);
-        setText(newText);
-        setIsValid(true);
       }
       setFileLoading(false);
     } catch (error) {
@@ -126,6 +181,7 @@ function MessageForm() {
     }
     setText(e.target.value);
   };
+
   const handleEnter = e => {
     if (!isValid && e.keyCode === 13) {
       e.preventDefault();
@@ -142,6 +198,10 @@ function MessageForm() {
     }
   };
 
+  useEffect(() => {
+    textInput.current.focus();
+  }, []);
+
   return (
     <div>
       <Form onSubmit={handleSubmit}>
@@ -156,8 +216,9 @@ function MessageForm() {
           />
         </Form.Group>
       </Form>
-
-      <ProgressBar style={{ marginBottom: '1rem' }} now={45} />
+      {progress > 0 && (
+        <ProgressBar style={{ marginBottom: '1rem' }} now={progress} />
+      )}
       <Row style={{ marginBottom: '1rem' }}>
         <Col>
           {/* isUpload */}
