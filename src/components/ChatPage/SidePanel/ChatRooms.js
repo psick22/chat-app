@@ -116,7 +116,7 @@ export class ChatRooms extends Component {
           }}
         >
           <FaRegSmileWink style={{ marginRight: 3 }} />
-          CHAT ROOMS{''} (1)
+          공개 채팅방{''} (1)
           <FaPlus
             onClick={this.handleShow}
             style={{ position: 'absolute', right: 0, cursor: 'pointer' }}

@@ -10,11 +10,13 @@ import {
   InputGroup,
   Row,
 } from 'react-bootstrap';
-import { FaLock } from 'react-icons/fa';
+import { FaLock, FaUnlock } from 'react-icons/fa';
 import { MdFavorite } from 'react-icons/md';
 import { AiOutlineSearch } from 'react-icons/ai';
+import { useSelector } from 'react-redux';
 
 function MessageHeader({ handleSearchChange }) {
+  const chatRoom = useSelector(state => state.chatRoom);
   return (
     <div
       style={{
@@ -30,7 +32,11 @@ function MessageHeader({ handleSearchChange }) {
         <Row>
           <Col>
             <h2>
-              <FaLock /> Chat room name <MdFavorite />
+              {chatRoom && chatRoom.isPrivate ? <FaLock /> : <FaUnlock />}
+              {'  '}
+              {chatRoom && chatRoom.currentChatRoom.name}
+              {'  '}
+              <MdFavorite />
             </h2>
           </Col>
           <Col>

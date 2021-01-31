@@ -90,7 +90,6 @@ function MessageForm() {
         .child(`${currentChatRoom.id}/message`)
         .push().key;
 
-      console.log(messagekey);
       let updates = {};
       updates[`${currentChatRoom.id}/message/${messagekey}`] = message;
 
