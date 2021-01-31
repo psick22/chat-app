@@ -11,9 +11,10 @@ function MessageForm() {
   const [fileLoading, setFileLoading] = useState(false);
   const [errors, setErrors] = useState([]);
   const [fileUrl, setFileUrl] = useState('');
+  const [progress, setProgress] = useState(0);
+
   const textInput = useRef(null);
   const fileInputRef = useRef(null);
-  const [progress, setProgress] = useState(0);
 
   const currentChatRoom = useSelector(state => state.chatRoom.currentChatRoom);
   const currentUser = useSelector(state => state.user.currentUser);

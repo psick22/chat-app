@@ -10,21 +10,45 @@ export class MainPanel extends Component {
     message: [],
     messagesRef: firebase.database().ref('messages'),
     isLoading: true,
+    searchTerm: '',
+    searchResults: [],
+    searchLoading: false,
   };
 
   componentDidMount() {
     const { chatRoom } = this.props && this.props;
-    console.log('mount', chatRoom);
     if (chatRoom) {
       this.addMessagesListener(chatRoom.id);
     }
   }
+  handleSearchMessages = () => {
+    const messagesList = [...this.state.message];
+    const regex = new RegExp(this.state.searchTerm, 'gi');
+    const searchResults = messagesList.reduce((acc, currentMessage) => {
+      if (
+        currentMessage.content?.match(regex) ||
+        currentMessage.user.userDisplayName?.match(regex)
+      ) {
+        acc.push(currentMessage);
+      }
+      return acc; //
+    }, []);
+    this.setState({ searchResults });
+  };
+
+  handleSearchChange = event => {
+    this.setState(
+      {
+        searchTerm: event.target.value,
+        searchLoading: true,
+      },
+      () => this.handleSearchMessages(),
+    );
+  };
 
   addMessagesListener = chatRoomId => {
     // 방마다 리스너를 달아야됨
     let messagesArray = [];
-    console.log(messagesArray);
-
     this.state.messagesRef
       .child(`${chatRoomId}/message`)
       .on('child_added', DataSnapshot => {
@@ -46,11 +70,11 @@ export class MainPanel extends Component {
   };
 
   render() {
-    const { message } = this.state;
+    const { message, searchTerm, searchResults } = this.state;
     console.log('main panel rendered');
     return (
       <div style={{ padding: '2rem 2rem 0 2rem' }}>
-        <MessageHeader />
+        <MessageHeader handleSearchChange={this.handleSearchChange} />
 
         <div
           id='message'
@@ -63,7 +87,9 @@ export class MainPanel extends Component {
             overflowY: 'auto',
           }}
         >
-          {this.renderMessages(message)}
+          {searchTerm
+            ? this.renderMessages(searchResults)
+            : this.renderMessages(message)}
         </div>
 
         <MessageForm />
