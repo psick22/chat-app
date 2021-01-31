@@ -54,10 +54,11 @@ export default function RegisterPage(props) {
         // @ts-ignore
         history.push('/');
       } else {
-        history.push('/login');
+        history.push('/register');
       }
     });
   }, []);
+
   console.log(watch('password')); // you can watch individual input by pass the name of the input
 
   return (
