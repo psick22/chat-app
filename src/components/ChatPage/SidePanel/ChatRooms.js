@@ -1,7 +1,7 @@
 // @ts-nocheck
 import firebase from 'firebase';
 import React, { Component } from 'react';
-import { Button, Form, Modal } from 'react-bootstrap';
+import { Button, Form, Modal, Badge } from 'react-bootstrap';
 import { FaRegSmileWink, FaPlus } from 'react-icons/fa';
 import { connect } from 'react-redux';
 import {
@@ -95,6 +95,9 @@ export class ChatRooms extends Component {
         onClick={() => this.changeChatRoom(room)}
       >
         # {room.name}
+        <Badge style={{ float: 'right', marginTop: '2.5px' }} variant='danger'>
+          1
+        </Badge>
       </li>
     ));
 

@@ -34,7 +34,7 @@ function MessageHeader({ handleSearchChange }) {
             <h2>
               {chatRoom && chatRoom.isPrivate ? <FaLock /> : <FaUnlock />}
               {'  '}
-              {chatRoom && chatRoom.currentChatRoom.name}
+              {chatRoom.currentChatRoom?.name}
               {'  '}
               <MdFavorite />
             </h2>
