@@ -14,13 +14,15 @@ export class ChatRooms extends Component {
     name: '',
     description: '',
     chatRoomsRef: firebase.database().ref('chatRooms'),
+    messagesRef: firebase.database().ref('messages'),
     chatRooms: [],
     firstLoad: true,
     activeChatRoomId: '',
+    notifications: [],
   };
 
   componentDidMount() {
-    this.AddChatRoomsListeners();
+    this.addChatRoomsListeners();
   }
 
   componentWillUnmount() {
@@ -36,14 +38,67 @@ export class ChatRooms extends Component {
     this.setState({ firstLoad: false });
   };
 
-  AddChatRoomsListeners = () => {
+  // 채팅방 생성할 때 리스너 생성, 스냅샷안에서
+  addChatRoomsListeners = () => {
     let chatRoomsArray = [];
     this.state.chatRoomsRef.on('child_added', DataSnapshot => {
       chatRoomsArray.push(DataSnapshot.val());
       this.setState({ chatRooms: chatRoomsArray }, () =>
         this.setFirstChatRoom(),
       );
+      this.addNotificationListener(DataSnapshot.key); // 채팅방 아이디
     });
+  };
+
+  addNotificationListener = chatRoomId => {
+    this.state.messagesRef
+      .child(`${chatRoomId}/message`)
+      .on('value', DataSnapshot => {
+        if (this.props.chatRoom) {
+          this.handleNotification(
+            chatRoomId,
+            this.props.chatRoom.id,
+            this.state.notifications,
+            DataSnapshot,
+          );
+        }
+      });
+  };
+  handleNotification = (
+    chatRoomId,
+    currentChatRoomId,
+    notifications,
+    DataSnapshot,
+  ) => {
+    let lastTotal = 0;
+    // 이미 notifications state 안에 정보가 있는 채팅방과 그렇지 않은 채팅방 구분해야함
+    let index =
+      notifications &&
+      notifications.findIndex(notification => notification.id === chatRoomId);
+
+    // notifications state 안에 해당 채팅방의 알림 정보가 없을 때
+    if (index === -1) {
+      notifications.push({
+        id: chatRoomId,
+        total: DataSnapshot.numChildren(),
+        lastKnownTotal: DataSnapshot.numChildren(),
+        count: 0,
+      });
+    }
+    // notifications state 안에 해당 채팅방의 알림 정보가 이미 있을 떄
+    else {
+      // 같은 채팅방이 아닐 때
+      if (currentChatRoomId !== chatRoomId) {
+        lastTotal = notifications[index].lastKnownTotal;
+
+        // 총 메시지 갯수 - 마지막 확인한 총 메세지 갯수 = count
+        if (DataSnapshot.numChildren() - lastTotal > 0) {
+          notifications[index].count = DataSnapshot.numChildren() - lastTotal;
+        }
+      }
+      notifications[index].total = DataSnapshot.numChildren();
+    }
+    this.setState({ notifications });
   };
 
   handleClose = () => this.setState({ show: false });
@@ -84,6 +139,16 @@ export class ChatRooms extends Component {
     }
   };
 
+  getNotificationCount = room => {
+    let count = 0;
+    this.state.notifications.forEach(notification => {
+      if (notification.id === room.id) {
+        count = notification.count;
+      }
+    });
+    if (count > 0) return count;
+  };
+
   renderChatRooms = chatRooms =>
     chatRooms?.map(room => (
       <li
@@ -96,7 +161,7 @@ export class ChatRooms extends Component {
       >
         # {room.name}
         <Badge style={{ float: 'right', marginTop: '2.5px' }} variant='danger'>
-          1
+          {this.getNotificationCount(room)}
         </Badge>
       </li>
     ));
@@ -105,6 +170,22 @@ export class ChatRooms extends Component {
     this.props.dispatch(setCurrentChatRoom(room));
     this.setState({ activeChatRoomId: room.id });
     this.props.dispatch(setPrivateChatRoom(false));
+    let index = this.state.notifications.findIndex(
+      notification => notification.id === room.id,
+    );
+    const newNotifications = [...this.state.notifications];
+    const { id, total, lastKnownTotal, count } = this.state.notifications[
+      index
+    ];
+    console.log(id, total, lastKnownTotal, count);
+
+    newNotifications[index] = {
+      id: id,
+      total: total,
+      lastKnownTotal: total,
+      count: 0,
+    };
+    this.setState({ notifications: newNotifications });
   };
 
   render() {
@@ -172,6 +253,7 @@ export class ChatRooms extends Component {
 const mapStateToProps = state => {
   return {
     user: state.user.currentUser,
+    chatRoom: state.chatRoom.currentChatRoom,
   };
 };
 
