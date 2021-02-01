@@ -27,6 +27,11 @@ export class ChatRooms extends Component {
 
   componentWillUnmount() {
     this.state.chatRoomsRef.off(); // 컴포넌트 언마운트 직전에 데이터베이스 이벤트 리스너 제거
+
+    this.state.chatRooms.forEach(chatRoom => {
+      this.state.messagesRef.child(`${chatRoom.id}/message`).off();
+      console.log(`${chatRoom.id}/message 리스너 제거`);
+    });
   }
 
   setFirstChatRoom = () => {
@@ -166,10 +171,7 @@ export class ChatRooms extends Component {
       </li>
     ));
 
-  changeChatRoom = room => {
-    this.props.dispatch(setCurrentChatRoom(room));
-    this.setState({ activeChatRoomId: room.id });
-    this.props.dispatch(setPrivateChatRoom(false));
+  clearNotifications = room => {
     let index = this.state.notifications.findIndex(
       notification => notification.id === room.id,
     );
@@ -177,7 +179,7 @@ export class ChatRooms extends Component {
     const { id, total, lastKnownTotal, count } = this.state.notifications[
       index
     ];
-    console.log(id, total, lastKnownTotal, count);
+    // console.log(id, total, lastKnownTotal, count);
 
     newNotifications[index] = {
       id: id,
@@ -186,6 +188,13 @@ export class ChatRooms extends Component {
       count: 0,
     };
     this.setState({ notifications: newNotifications });
+  };
+
+  changeChatRoom = room => {
+    this.props.dispatch(setCurrentChatRoom(room));
+    this.setState({ activeChatRoomId: room.id });
+    this.props.dispatch(setPrivateChatRoom(false));
+    this.clearNotifications(room);
   };
 
   render() {
