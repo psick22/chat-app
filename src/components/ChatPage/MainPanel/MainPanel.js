@@ -21,6 +21,7 @@ export class MainPanel extends Component {
       this.addMessagesListener(chatRoom.id);
     }
   }
+
   handleSearchMessages = () => {
     const messagesList = [...this.state.message];
     const regex = new RegExp(this.state.searchTerm, 'gi');

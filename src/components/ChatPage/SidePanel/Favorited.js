@@ -1,75 +1,105 @@
-import React, { useState, useEffect } from 'react';
 import { FaRegSmileWink } from 'react-icons/fa';
-import { useSelector } from 'react-redux';
 import firebase from '../../../firebase';
+import React, { Component } from 'react';
+import { connect } from 'react-redux';
+import {
+  setCurrentChatRoom,
+  setPrivateChatRoom,
+} from '../../../redux/actions/chatRoom_action';
 
-function Favorited() {
-  const [favoriteChatRooms, setFavoriteChatRooms] = useState([]);
-  const chatRoom = useSelector(state => state.chatRoom);
-  const currentUser = useSelector(state => state.user.currentUser);
-  const usersRef = firebase.database().ref('users');
-  const renderChatRooms = () => {};
+// const chatRoom = useSelector(state => state.chatRoom);
+//   const currentUser = useSelector(state => state.user.currentUser);
+//   const usersRef = firebase.database().ref('users');
 
-  const stateHandler = newState => {
-    console.log('setstate');
-    setFavoriteChatRooms(newState);
-    console.log('변경된 상태', favoriteChatRooms);
+export class Favorited extends Component {
+  state = {
+    usersRef: firebase.database().ref('users'),
+    favoriteChatRooms: [],
+    activeChatRoomId: '',
   };
 
-  const addListeners = () => {
-    usersRef
-      .child(`${currentUser.uid}/favorite`)
-      .on('child_added', snapshot => {
-        console.log('리스너 등록');
-        console.log(snapshot.key); // 리스너에 감지된 child의 key와 value
-        const favoriteChatRoom = {
-          id: snapshot.key,
-          ...snapshot.val(),
-        };
-        const newFavoriteList = [...favoriteChatRooms];
-        console.log('추가전 리스트', newFavoriteList);
-        newFavoriteList.push(favoriteChatRoom);
-
-        stateHandler(newFavoriteList);
-        console.log('추가후 리스트', newFavoriteList);
-      });
-
-    usersRef
-      .child(`${currentUser.uid}/favorite`)
-      .on('child_removed', snapshot => {
-        const toRemoveFavorite = {
-          id: snapshot.key,
-          ...snapshot.val(),
-        };
-        console.log('삭제 전 리스트', favoriteChatRooms);
-
-        const newFavoriteList = favoriteChatRooms.filter(item => {
-          return item.id !== toRemoveFavorite.id;
-        });
-        console.log('삭제 후 리스트', newFavoriteList);
-
-        stateHandler(newFavoriteList);
-      });
+  componentDidMount() {
+    if (this.props.currentUser) {
+      this.addListeners(this.props.currentUser.uid);
+    }
+  }
+  componentWillUnmount() {
+    if (this.props.currentUser) {
+      this.removeListeners(this.props.currentUser.uid);
+    }
+  }
+  removeListeners = userId => {
+    this.state.usersRef.child(`${userId}/favorite`).off();
   };
 
-  useEffect(() => {
-    console.log('이벤트리스너등록 useEffect');
-    currentUser && addListeners();
-  }, []);
+  addListeners = userId => {
+    const { usersRef } = this.state;
 
-  useEffect(() => {
-    console.log(favoriteChatRooms);
-  }, [favoriteChatRooms]);
+    usersRef.child(`${userId}/favorite`).on('child_added', DataSnapshot => {
+      const favoriteChatRoom = {
+        id: DataSnapshot.key,
+        ...DataSnapshot.val(),
+      };
+      this.setState({
+        favoriteChatRooms: [...this.state.favoriteChatRooms, favoriteChatRoom],
+      });
+    });
+    usersRef.child(`${userId}/favorite`).on('child_removed', DataSnapshot => {
+      const chatRoomToRemove = { id: DataSnapshot.key, ...DataSnapshot.val() };
+      const filteredChatRoom = this.state.favoriteChatRooms.filter(chatRoom => {
+        return chatRoom.id !== chatRoomToRemove.id;
+      });
 
-  return (
-    <div>
-      <span style={{ display: 'flex', alignItems: 'center' }}>
-        <FaRegSmileWink style={{ marginRight: '3px' }} />
-        즐겨찾기
-      </span>
-      <ul style={{ listStyleType: 'none', padding: 0 }}>{renderChatRooms()}</ul>
-    </div>
-  );
+      this.setState({
+        favoriteChatRooms: filteredChatRoom,
+      });
+    });
+  };
+
+  renderFavoriteChatRooms = favoriteChatRoom => {
+    return (
+      favoriteChatRoom.length > 0 &&
+      favoriteChatRoom.map(chatRoom => (
+        <li
+          key={chatRoom.id}
+          onClick={() => this.changeChatRoom(chatRoom)}
+          style={{
+            backgroundColor:
+              chatRoom.id === this.state.activeChatRoomId && '#ffffff45',
+          }}
+        >
+          # {chatRoom.name}
+        </li>
+      ))
+    );
+  };
+
+  changeChatRoom = room => {
+    this.props.dispatch(setCurrentChatRoom(room));
+    this.setState({ activeChatRoomId: room.id });
+    this.props.dispatch(setPrivateChatRoom(false));
+  };
+
+  render() {
+    const { favoriteChatRooms } = this.state;
+    return (
+      <div>
+        <span style={{ display: 'flex', alignItems: 'center' }}>
+          <FaRegSmileWink style={{ marginRight: '3px' }} />
+          즐겨찾기
+        </span>
+        <ul style={{ listStyleType: 'none', padding: 0 }}>
+          {this.renderFavoriteChatRooms(favoriteChatRooms)}
+        </ul>
+      </div>
+    );
+  }
 }
 
-export default Favorited;
+const mapStateToProps = state => {
+  return {
+    currentUser: state.user.currentUser,
+  };
+};
+
+export default connect(mapStateToProps)(Favorited);

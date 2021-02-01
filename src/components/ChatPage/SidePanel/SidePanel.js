@@ -20,7 +20,7 @@ function SidePanel() {
     >
       <UserPanel />
 
-      <Favorited key={currentUser?.uid} />
+      <Favorited />
 
       <ChatRooms />
 
