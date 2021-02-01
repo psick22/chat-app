@@ -30,7 +30,6 @@ function MessageHeader({ handleSearchChange }) {
             console.log(err);
           }
         });
-      console.log('favorite remove');
       setIsFavorite(false);
     } else {
       usersRef
@@ -45,7 +44,6 @@ function MessageHeader({ handleSearchChange }) {
           updated_time: Date.now(),
         });
       setIsFavorite(true);
-      console.log('favorite add');
     }
   };
 
@@ -54,8 +52,6 @@ function MessageHeader({ handleSearchChange }) {
       .child(`${currentUser.uid}/favorite/`)
       .once('value')
       .then(data => {
-        console.log('favorite 리스너 등록');
-        console.log(data.val()); // 방아이디가 키이고 상세 정보가 밸류인 오브젝트
         if (data.val() !== null) {
           const keys = Object.keys(data.val()); // 즐겨찾기 방 아이디의 배열
           const isAlreadyFavorite = keys.includes(chatRoom.currentChatRoom?.id);
