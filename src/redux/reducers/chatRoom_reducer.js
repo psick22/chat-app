@@ -1,8 +1,14 @@
 /* eslint-disable import/no-anonymous-default-export */
-import { SET_CURRENT_CHAT_ROOM } from '../actions/types';
+import {
+  SET_CURRENT_CHAT_ROOM,
+  SET_PRIVATE_CHAT_ROOM,
+  SET_USER_POSTS,
+} from '../actions/types';
 
 const initialChatRoomState = {
   currentChatRoom: null,
+  isPrivate: false,
+  userPosts: {},
 };
 
 export default function (state = initialChatRoomState, action) {
@@ -12,7 +18,16 @@ export default function (state = initialChatRoomState, action) {
         ...state,
         currentChatRoom: action.payload,
       };
-
+    case SET_PRIVATE_CHAT_ROOM:
+      return {
+        ...state,
+        isPrivate: action.payload,
+      };
+    case SET_USER_POSTS:
+      return {
+        ...state,
+        userPosts: action.payload,
+      };
     default:
       return state;
   }
