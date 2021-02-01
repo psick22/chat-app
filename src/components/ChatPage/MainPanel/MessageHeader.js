@@ -9,6 +9,7 @@ import {
   Image,
   InputGroup,
   Row,
+  Media,
 } from 'react-bootstrap';
 import { FaLock, FaUnlock } from 'react-icons/fa';
 import { MdFavorite, MdFavoriteBorder } from 'react-icons/md';
@@ -16,10 +17,11 @@ import { AiOutlineSearch } from 'react-icons/ai';
 import { useSelector } from 'react-redux';
 import firebase from '../../../firebase';
 
-function MessageHeader({ handleSearchChange }) {
+function MessageHeader({ handleSearchChange, postCounts }) {
   const [isFavorite, setIsFavorite] = useState(false);
   const chatRoom = useSelector(state => state.chatRoom);
   const currentUser = useSelector(state => state.user.currentUser);
+  const userPosts = useSelector(state => state.chatRoom.userPosts);
   const usersRef = firebase.database().ref('users');
 
   const handleFavorite = () => {
@@ -59,6 +61,28 @@ function MessageHeader({ handleSearchChange }) {
           isAlreadyFavorite ? setIsFavorite(true) : setIsFavorite(false);
         }
       });
+  };
+
+  // userPost 유저별 매핑, 카운트 기반 내림차순 정렬
+  const renderUserPosts = userPosts => {
+    console.log(Object.entries(userPosts));
+    return Object.entries(userPosts)
+      .sort((a, b) => b[1].count - a[1].count)
+      .map(([userKey, userValue], index) => (
+        <Media key={index}>
+          <img
+            src={userValue.image}
+            alt={userValue.name}
+            width={48}
+            height={48}
+            className='mr-3'
+          />
+          <Media.Body>
+            <h6>{userKey}</h6>
+            <p>{userValue.count}개</p>
+          </Media.Body>
+        </Media>
+      ));
   };
 
   useEffect(() => {
@@ -131,9 +155,14 @@ function MessageHeader({ handleSearchChange }) {
               height: '30px',
             }}
             roundedCircle
-            src={chatRoom.currentChatRoom?.createdBy.image}
+            // TODO isPrivate 이 true 일때 소스에 유저 이미지 추가해야함 (현재 데이터베이스 스키마에 없는 상태)
+            src={
+              !chatRoom.isPrivate && chatRoom.currentChatRoom?.createdBy.image
+            }
           />{' '}
-          {chatRoom.currentChatRoom?.createdBy.name}
+          {!chatRoom.isPrivate
+            ? chatRoom.currentChatRoom?.createdBy.name
+            : chatRoom.currentChatRoom?.name}
         </div>
         <Row>
           <Col>
@@ -160,7 +189,10 @@ function MessageHeader({ handleSearchChange }) {
                   </Accordion.Toggle>
                 </Card.Header>
                 <Accordion.Collapse eventKey='0'>
-                  <Card.Body>{/* 유저 별로 채팅 수 */}</Card.Body>
+                  <Card.Body>
+                    {/* 유저 별로 채팅 수 */}
+                    {userPosts && renderUserPosts(userPosts)}
+                  </Card.Body>
                 </Accordion.Collapse>
               </Card>
             </Accordion>

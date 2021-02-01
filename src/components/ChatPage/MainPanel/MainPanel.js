@@ -4,6 +4,7 @@ import MessageForm from './MessageForm';
 import MessageHeader from './MessageHeader';
 import { connect } from 'react-redux';
 import firebase from 'firebase';
+import { setUserPosts } from '../../../redux/actions/chatRoom_action';
 
 export class MainPanel extends Component {
   state = {
@@ -50,6 +51,7 @@ export class MainPanel extends Component {
   addMessagesListener = chatRoomId => {
     // 방마다 리스너를 달아야됨
     let messagesArray = [];
+
     this.state.messagesRef
       .child(`${chatRoomId}/message`)
       .on('child_added', DataSnapshot => {
@@ -58,6 +60,7 @@ export class MainPanel extends Component {
           message: messagesArray,
           isLoading: false,
         });
+        this.postCounter(messagesArray);
       });
   };
 
@@ -70,7 +73,25 @@ export class MainPanel extends Component {
     return newMessage;
   };
 
+  postCounter = messagesArray => {
+    let userPosts = messagesArray.reduce((acc, currentMessage) => {
+      if (currentMessage.user.userDisplayName in acc) {
+        acc[currentMessage.user.userDisplayName].count += 1;
+      } else {
+        acc[currentMessage.user.userDisplayName] = {
+          image: currentMessage.user.userImage,
+          count: 1,
+        };
+      }
+      return acc;
+    }, {});
+    console.log('userPosts:', userPosts);
+    this.props.dispatch(setUserPosts(userPosts));
+  };
+
   render() {
+    console.log('post count', this.state.postCounts);
+
     const { message, searchTerm, searchResults } = this.state;
     console.log('main panel rendered');
     return (
