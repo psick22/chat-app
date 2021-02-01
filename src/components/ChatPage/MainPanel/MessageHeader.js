@@ -21,6 +21,7 @@ function MessageHeader({ handleSearchChange }) {
   const chatRoom = useSelector(state => state.chatRoom);
   const currentUser = useSelector(state => state.user.currentUser);
   const usersRef = firebase.database().ref('users');
+
   const handleFavorite = () => {
     if (isFavorite) {
       usersRef
@@ -81,7 +82,11 @@ function MessageHeader({ handleSearchChange }) {
         <Row>
           <Col>
             <h2>
-              {chatRoom && chatRoom.isPrivate ? <FaLock /> : <FaUnlock />}
+              {chatRoom && chatRoom.isPrivate ? (
+                <FaLock style={{ marginBottom: '10px' }} />
+              ) : (
+                <FaUnlock style={{ marginBottom: '10px' }} />
+              )}
               {'  '}
               {chatRoom.currentChatRoom?.name}
               {'  '}
@@ -89,9 +94,9 @@ function MessageHeader({ handleSearchChange }) {
               {!chatRoom.isPrivate && (
                 <span style={{ cursor: 'pointer' }} onClick={handleFavorite}>
                   {isFavorite ? (
-                    <MdFavorite style={{ marginBottom: '8px' }} />
+                    <MdFavorite style={{ marginBottom: '10px' }} />
                   ) : (
-                    <MdFavoriteBorder style={{ marginBottom: '8px' }} />
+                    <MdFavoriteBorder style={{ marginBottom: '10px' }} />
                   )}
                 </span>
               )}
@@ -113,8 +118,22 @@ function MessageHeader({ handleSearchChange }) {
             </InputGroup>
           </Col>
         </Row>
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <Image src='' /> user name
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            height: '40px',
+          }}
+        >
+          <Image
+            style={{
+              width: '30px',
+              height: '30px',
+            }}
+            roundedCircle
+            src={chatRoom.currentChatRoom?.createdBy.image}
+          />{' '}
+          {chatRoom.currentChatRoom?.createdBy.name}
         </div>
         <Row>
           <Col>
@@ -126,7 +145,7 @@ function MessageHeader({ handleSearchChange }) {
                   </Accordion.Toggle>
                 </Card.Header>
                 <Accordion.Collapse eventKey='0'>
-                  <Card.Body>Description</Card.Body>
+                  <Card.Body>{chatRoom.currentChatRoom?.description}</Card.Body>
                 </Accordion.Collapse>
               </Card>
             </Accordion>
@@ -141,7 +160,7 @@ function MessageHeader({ handleSearchChange }) {
                   </Accordion.Toggle>
                 </Card.Header>
                 <Accordion.Collapse eventKey='0'>
-                  <Card.Body>Post Count</Card.Body>
+                  <Card.Body>{/* 유저 별로 채팅 수 */}</Card.Body>
                 </Accordion.Collapse>
               </Card>
             </Accordion>

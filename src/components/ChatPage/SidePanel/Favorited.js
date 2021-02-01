@@ -35,6 +35,21 @@ export class Favorited extends Component {
   addListeners = userId => {
     const { usersRef } = this.state;
 
+    usersRef
+      .child(`${userId}/favorite/`)
+      .once('value')
+      .then(data => {
+        if (data.val() !== null) {
+          let newList = [];
+          for (const [key, value] of Object.entries(data.val())) {
+            console.log('value', value);
+            newList.push({ id: key, ...value });
+          }
+          console.log(newList);
+          this.setState({ favoriteChatRooms: newList });
+        }
+      });
+
     usersRef.child(`${userId}/favorite`).on('child_added', DataSnapshot => {
       const favoriteChatRoom = {
         id: DataSnapshot.key,
