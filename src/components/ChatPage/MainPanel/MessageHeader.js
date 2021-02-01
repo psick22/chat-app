@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Accordion,
   Button,
@@ -11,12 +11,65 @@ import {
   Row,
 } from 'react-bootstrap';
 import { FaLock, FaUnlock } from 'react-icons/fa';
-import { MdFavorite } from 'react-icons/md';
+import { MdFavorite, MdFavoriteBorder } from 'react-icons/md';
 import { AiOutlineSearch } from 'react-icons/ai';
 import { useSelector } from 'react-redux';
+import firebase from '../../../firebase';
 
 function MessageHeader({ handleSearchChange }) {
+  const [isFavorite, setIsFavorite] = useState(false);
   const chatRoom = useSelector(state => state.chatRoom);
+  const currentUser = useSelector(state => state.user.currentUser);
+  const usersRef = firebase.database().ref('users');
+  const handleFavorite = () => {
+    if (isFavorite) {
+      usersRef
+        .child(`${currentUser.uid}/favorite/${chatRoom.currentChatRoom.id}`)
+        .remove(err => {
+          if (err !== null) {
+            console.log(err);
+          }
+        });
+      console.log('favorite remove');
+      setIsFavorite(false);
+    } else {
+      usersRef
+        .child(`${currentUser.uid}/favorite/${chatRoom.currentChatRoom.id}`)
+        .update({
+          name: chatRoom.currentChatRoom.name,
+          description: chatRoom.currentChatRoom.description,
+          createdBy: {
+            name: chatRoom.currentChatRoom.createdBy.name,
+            image: chatRoom.currentChatRoom.createdBy.image,
+          },
+          updated_time: Date.now(),
+        });
+      setIsFavorite(true);
+      console.log('favorite add');
+    }
+  };
+
+  const addFavoriteListener = () => {
+    usersRef
+      .child(`${currentUser.uid}/favorite/`)
+      .once('value')
+      .then(data => {
+        console.log('favorite 리스너 등록');
+        console.log(data.val()); // 방아이디가 키이고 상세 정보가 밸류인 오브젝트
+        if (data.val() !== null) {
+          const keys = Object.keys(data.val()); // 즐겨찾기 방 아이디의 배열
+          const isAlreadyFavorite = keys.includes(chatRoom.currentChatRoom?.id);
+          isAlreadyFavorite ? setIsFavorite(true) : setIsFavorite(false);
+        }
+      });
+  };
+
+  useEffect(() => {
+    if (chatRoom && currentUser) {
+      addFavoriteListener();
+    }
+  }, []);
+
   return (
     <div
       style={{
@@ -36,7 +89,16 @@ function MessageHeader({ handleSearchChange }) {
               {'  '}
               {chatRoom.currentChatRoom?.name}
               {'  '}
-              <MdFavorite />
+
+              {!chatRoom.isPrivate && (
+                <span style={{ cursor: 'pointer' }} onClick={handleFavorite}>
+                  {isFavorite ? (
+                    <MdFavorite style={{ marginBottom: '8px' }} />
+                  ) : (
+                    <MdFavoriteBorder style={{ marginBottom: '8px' }} />
+                  )}
+                </span>
+              )}
             </h2>
           </Col>
           <Col>
