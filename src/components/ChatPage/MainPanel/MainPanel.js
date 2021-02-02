@@ -27,6 +27,10 @@ export class MainPanel extends Component {
     if (chatRoom) {
       this.addMessagesListener(chatRoom.id);
       this.addTypingListener(chatRoom.id);
+      this.scrollRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'end',
+      });
     }
   }
   componentWillUnmount() {
@@ -208,7 +212,8 @@ export class MainPanel extends Component {
             overflowY: 'auto',
           }}
         >
-          {this.renderSkeleton(isLoading)}
+          {!message && this.renderSkeleton(isLoading)}
+          {!message && <div>없음</div>}
           {searchTerm
             ? this.renderMessages(searchResults)
             : this.renderMessages(message)}
