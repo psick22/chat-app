@@ -20,6 +20,7 @@ function MessageForm() {
   const currentUser = useSelector(state => state.user.currentUser);
   const storageRef = firebase.storage().ref();
   const messagesRef = firebase.database().ref('messages');
+  const typingRef = firebase.database().ref('typing');
 
   const createMessage = (fileUrl = null) => {
     let timestamp = new Date().getTime();
@@ -42,7 +43,7 @@ function MessageForm() {
 
     if (fileUrl !== null) {
       message['files'] = fileUrl;
-      message['content'] = `${fileUrl}\n` + text;
+      message['content'] = text;
     }
 
     return { userInfo, message };
@@ -73,12 +74,14 @@ function MessageForm() {
       setIsValid(false);
       setErrors([]);
       textInput.current.focus();
+      typingRef.child(`${currentChatRoom.id}/${currentUser.uid}`).remove();
     } catch (error) {
       setErrors(prevState => prevState.concat(error.message));
       console.log(error);
       setLoading(false);
     }
   };
+  console.log();
 
   const handleSubmitFiles = async fileUrl => {
     setLoading(true);
@@ -182,7 +185,7 @@ function MessageForm() {
     setText(e.target.value);
   };
 
-  const handleEnter = e => {
+  const handleKeyDown = e => {
     if (!isValid && e.keyCode === 13) {
       e.preventDefault();
     } else {
@@ -195,6 +198,14 @@ function MessageForm() {
           handleSubmit(e);
         }
       }
+    }
+
+    if (text) {
+      typingRef
+        .child(`${currentChatRoom.id}/${currentUser.uid}`)
+        .set(currentUser.displayName);
+    } else {
+      typingRef.child(`${currentChatRoom.id}/${currentUser.uid}`).remove();
     }
   };
 
@@ -212,7 +223,7 @@ function MessageForm() {
             rows={3}
             value={text}
             onChange={handleChange}
-            onKeyDown={handleEnter}
+            onKeyDown={handleKeyDown}
           />
         </Form.Group>
       </Form>

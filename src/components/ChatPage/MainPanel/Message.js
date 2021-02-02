@@ -18,8 +18,9 @@ function Message({ message }) {
     }
   };
   return (
-    <Media>
+    <Media style={{ display: 'flex', width: '80%', padding: '0.5rem' }}>
       <img
+        style={{ margin: 0 }}
         width={40}
         height={40}
         className='mr-3'
@@ -29,7 +30,9 @@ function Message({ message }) {
       <Media.Body
         style={{
           backgroundColor: isMine(message.user.userUid),
-          marginBottom: '0.8rem',
+          marginBottom: 0,
+          width: '80%',
+          overflowX: 'hidden',
         }}
       >
         <h5>
@@ -41,14 +44,16 @@ function Message({ message }) {
         {isFile(message) ? (
           <>
             <img
-              style={{ maxWidth: '300px' }}
+              style={{ width: '30%', minWidth: '300px', display: 'flex' }}
               src={message.files}
               alt='이미지'
             />
-            <p>{message.content}</p>
+            <p style={{ width: '100%', overflowX: 'hidden' }}>
+              {message.content}
+            </p>
           </>
         ) : (
-          <p>{message.content}</p>
+          <p style={{ width: '100%', overflowX: 'clip' }}>{message.content}</p>
         )}
       </Media.Body>
     </Media>

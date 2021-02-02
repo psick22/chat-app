@@ -5,24 +5,54 @@ import MessageHeader from './MessageHeader';
 import { connect } from 'react-redux';
 import firebase from 'firebase';
 import { setUserPosts } from '../../../redux/actions/chatRoom_action';
+import Skeleton from '../../../commons/components/Skeleton';
 
 export class MainPanel extends Component {
+  scrollRef = React.createRef();
+
   state = {
     message: [],
     messagesRef: firebase.database().ref('messages'),
+    typingRef: firebase.database().ref('typing'),
     isLoading: true,
     searchTerm: '',
     searchResults: [],
     searchLoading: false,
+    typingUsers: [],
+    listenerLists: [],
   };
 
   componentDidMount() {
     const { chatRoom } = this.props && this.props;
     if (chatRoom) {
       this.addMessagesListener(chatRoom.id);
+      this.addTypingListener(chatRoom.id);
+      this.scrollRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'end',
+      });
+    }
+  }
+  componentWillUnmount() {
+    this.state.messagesRef.off();
+    this.removeListeners(this.state.listenerLists); // 리스너의 이벤트 타입이 두가지 이므로 한번에 off 할 수 없다
+  }
+
+  componentDidUpdate() {
+    if (this.scrollRef) {
+      console.log(this.scrollRef.current);
+      this.scrollRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'end',
+      });
     }
   }
 
+  removeListeners = listeners => {
+    listeners.forEach(listener => {
+      listener.ref.child(listener.id).off(listener.event);
+    });
+  };
   handleSearchMessages = () => {
     const messagesList = [...this.state.message];
     const regex = new RegExp(this.state.searchTerm, 'gi');
@@ -46,22 +76,6 @@ export class MainPanel extends Component {
       },
       () => this.handleSearchMessages(),
     );
-  };
-
-  addMessagesListener = chatRoomId => {
-    // 방마다 리스너를 달아야됨
-    let messagesArray = [];
-
-    this.state.messagesRef
-      .child(`${chatRoomId}/message`)
-      .on('child_added', DataSnapshot => {
-        messagesArray.push(DataSnapshot.val());
-        this.setState({
-          message: messagesArray,
-          isLoading: false,
-        });
-        this.postCounter(messagesArray);
-      });
   };
 
   renderMessages = message => {
@@ -89,13 +103,102 @@ export class MainPanel extends Component {
     this.props.dispatch(setUserPosts(userPosts));
   };
 
-  render() {
-    console.log('post count', this.state.postCounts);
+  addMessagesListener = chatRoomId => {
+    // 방마다 리스너를 달아야됨
+    let messagesArray = [];
 
-    const { message, searchTerm, searchResults } = this.state;
+    this.state.messagesRef
+      .child(`${chatRoomId}/message`)
+      .on('child_added', DataSnapshot => {
+        messagesArray.push(DataSnapshot.val());
+        this.setState({
+          message: messagesArray,
+          isLoading: false,
+        });
+        this.postCounter(messagesArray);
+      });
+  };
+
+  addTypingListener = chatRoomId => {
+    let typingUsers = [];
+    this.state.typingRef.child(chatRoomId).on('child_added', snapshot => {
+      if (snapshot?.key !== this.props.user?.uid) {
+        // 입력 중인 유저 정보 가져오기
+        typingUsers = typingUsers.concat({
+          id: snapshot.key,
+          name: snapshot.val(),
+        });
+      }
+      this.setState({ typingUsers });
+    });
+
+    this.addToListenerLists(chatRoomId, this.state.typingRef, 'child_added');
+
+    this.state.typingRef.child(chatRoomId).on('child_removed', snapshot => {
+      // child_removed인 유저 정보 가져오기
+      let index = typingUsers.findIndex(user => snapshot.key === user.id);
+      if (index !== -1) {
+        typingUsers.splice(index, 1);
+        this.setState({ typingUsers });
+      }
+    });
+    this.addToListenerLists(chatRoomId, this.state.typingRef, 'child_removed');
+  };
+
+  addToListenerLists = (id, ref, event) => {
+    // 등록된 리스너 인지 확인
+    const index = this.state.listerLists?.findIndex(item => {
+      return item.id === id && item.ref === ref && item.event === event;
+    });
+    if (index === -1) {
+      const newListener = {
+        id: id,
+        ref: ref,
+        event: event,
+      };
+
+      this.setState({
+        listerLists: this.state.listerLists.concat(newListener),
+      });
+    }
+  };
+
+  renderTypingUsers = typingUsers => {
+    return (
+      typingUsers.length > 0 &&
+      typingUsers.map(user => {
+        console.log('입력중');
+        return <span key={user.name}>{user.name}님이 입력 중입니다.</span>;
+      })
+    );
+  };
+
+  renderSkeleton = isLoading => {
+    return (
+      isLoading && (
+        <>
+          {[...new Array(10)].map((_, i) => (
+            <Skeleton key={i} />
+          ))}
+          <Skeleton />
+        </>
+      )
+    );
+  };
+
+  render() {
+    const { message, searchTerm, searchResults, isLoading } = this.state;
     console.log('main panel rendered');
     return (
-      <div style={{ padding: '2rem 2rem 0 2rem' }}>
+      <div
+        style={{
+          padding: '2rem 2rem 0 2rem',
+          display: 'flex',
+          width: '100%',
+          minWidth: '300px',
+          flexDirection: 'column',
+        }}
+      >
         <MessageHeader handleSearchChange={this.handleSearchChange} />
 
         <div
@@ -109,11 +212,14 @@ export class MainPanel extends Component {
             overflowY: 'auto',
           }}
         >
+          {!message && this.renderSkeleton(isLoading)}
+          {!message && <div>없음</div>}
           {searchTerm
             ? this.renderMessages(searchResults)
             : this.renderMessages(message)}
+          {this.renderTypingUsers(this.state.typingUsers)}
+          <div ref={this.scrollRef} />
         </div>
-
         <MessageForm />
       </div>
     );
