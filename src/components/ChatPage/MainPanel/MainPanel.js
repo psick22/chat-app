@@ -10,16 +10,19 @@ export class MainPanel extends Component {
   state = {
     message: [],
     messagesRef: firebase.database().ref('messages'),
+    typingRef: firebase.database().ref('typing'),
     isLoading: true,
     searchTerm: '',
     searchResults: [],
     searchLoading: false,
+    typingUsers: [],
   };
 
   componentDidMount() {
     const { chatRoom } = this.props && this.props;
     if (chatRoom) {
       this.addMessagesListener(chatRoom.id);
+      this.addTypingListener(chatRoom.id);
     }
   }
 
@@ -89,8 +92,32 @@ export class MainPanel extends Component {
     this.props.dispatch(setUserPosts(userPosts));
   };
 
+  addTypingListener = chatRoomId => {
+    let typingUsers = [];
+    this.state.typingRef.child(chatRoomId).on('child_added', snapshot => {
+      if (snapshot?.key !== this.props.user?.uid) {
+        // 입력 중인 유저 정보 가져오기
+        typingUsers = typingUsers.concat({
+          id: snapshot.key,
+          name: snapshot.val(),
+        });
+      }
+      this.setState({ typingUsers });
+    });
+
+    this.state.typingRef.child(chatRoomId).on('child_removed', snapshot => {
+      // child_removed인 유저 정보 가져오기
+      let index = typingUsers.findIndex(user => snapshot.key === user.id);
+      if (index !== -1) {
+        typingUsers.splice(index, 1);
+        this.setState({ typingUsers });
+      }
+    });
+  };
+
   render() {
     console.log('post count', this.state.postCounts);
+    console.log('typing users', this.state.typingUsers);
 
     const { message, searchTerm, searchResults } = this.state;
     console.log('main panel rendered');
