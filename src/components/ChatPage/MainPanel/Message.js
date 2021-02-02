@@ -18,7 +18,7 @@ function Message({ message }) {
     }
   };
   return (
-    <Media>
+    <Media style={{ display: 'flex', width: '100%' }}>
       <img
         width={40}
         height={40}
@@ -30,6 +30,7 @@ function Message({ message }) {
         style={{
           backgroundColor: isMine(message.user.userUid),
           marginBottom: '0.8rem',
+          width: '100%',
         }}
       >
         <h5>
@@ -45,10 +46,12 @@ function Message({ message }) {
               src={message.files}
               alt='이미지'
             />
-            <p>{message.content}</p>
+            <p style={{ width: '100%', overflowX: 'auto' }}>
+              {message.content}
+            </p>
           </>
         ) : (
-          <p>{message.content}</p>
+          <p style={{ display: 'flex', width: '100%' }}>{message.content}</p>
         )}
       </Media.Body>
     </Media>

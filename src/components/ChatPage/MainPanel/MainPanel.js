@@ -5,6 +5,7 @@ import MessageHeader from './MessageHeader';
 import { connect } from 'react-redux';
 import firebase from 'firebase';
 import { setUserPosts } from '../../../redux/actions/chatRoom_action';
+import Skeleton from '../../../commons/components/Skeleton';
 
 export class MainPanel extends Component {
   scrollRef = React.createRef();
@@ -36,7 +37,10 @@ export class MainPanel extends Component {
   componentDidUpdate() {
     if (this.scrollRef) {
       console.log(this.scrollRef.current);
-      this.scrollRef.current.scrollIntoView({ behavior: 'smooth' });
+      this.scrollRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'end',
+      });
     }
   }
 
@@ -165,11 +169,31 @@ export class MainPanel extends Component {
     );
   };
 
+  renderSkeleton = isLoading => {
+    return (
+      isLoading && (
+        <>
+          {[...new Array(10)].map((_, i) => (
+            <Skeleton key={i} />
+          ))}
+          <Skeleton />
+        </>
+      )
+    );
+  };
+
   render() {
-    const { message, searchTerm, searchResults } = this.state;
+    const { message, searchTerm, searchResults, isLoading } = this.state;
     console.log('main panel rendered');
     return (
-      <div style={{ padding: '2rem 2rem 0 2rem' }}>
+      <div
+        style={{
+          padding: '2rem 2rem 0 2rem',
+          display: 'flex',
+          width: '100%',
+          flexDirection: 'column',
+        }}
+      >
         <MessageHeader handleSearchChange={this.handleSearchChange} />
 
         <div
@@ -183,6 +207,7 @@ export class MainPanel extends Component {
             overflowY: 'auto',
           }}
         >
+          {this.renderSkeleton(isLoading)}
           {searchTerm
             ? this.renderMessages(searchResults)
             : this.renderMessages(message)}
