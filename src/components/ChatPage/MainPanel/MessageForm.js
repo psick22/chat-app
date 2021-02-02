@@ -81,6 +81,7 @@ function MessageForm() {
       setLoading(false);
     }
   };
+  console.log();
 
   const handleSubmitFiles = async fileUrl => {
     setLoading(true);

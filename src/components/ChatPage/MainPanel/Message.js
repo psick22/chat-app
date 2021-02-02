@@ -17,8 +17,6 @@ function Message({ message }) {
       return;
     }
   };
-
-  const addTypingListener = () => {};
   return (
     <Media>
       <img

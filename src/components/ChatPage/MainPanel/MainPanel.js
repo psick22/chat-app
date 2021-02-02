@@ -7,6 +7,8 @@ import firebase from 'firebase';
 import { setUserPosts } from '../../../redux/actions/chatRoom_action';
 
 export class MainPanel extends Component {
+  scrollRef = React.createRef();
+
   state = {
     message: [],
     messagesRef: firebase.database().ref('messages'),
@@ -16,6 +18,7 @@ export class MainPanel extends Component {
     searchResults: [],
     searchLoading: false,
     typingUsers: [],
+    listenerLists: [],
   };
 
   componentDidMount() {
@@ -25,7 +28,23 @@ export class MainPanel extends Component {
       this.addTypingListener(chatRoom.id);
     }
   }
+  componentWillUnmount() {
+    this.state.messagesRef.off();
+    this.removeListeners(this.state.listenerLists); // 리스너의 이벤트 타입이 두가지 이므로 한번에 off 할 수 없다
+  }
 
+  componentDidUpdate() {
+    if (this.scrollRef) {
+      console.log(this.scrollRef.current);
+      this.scrollRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }
+
+  removeListeners = listeners => {
+    listeners.forEach(listener => {
+      listener.ref.child(listener.id).off(listener.event);
+    });
+  };
   handleSearchMessages = () => {
     const messagesList = [...this.state.message];
     const regex = new RegExp(this.state.searchTerm, 'gi');
@@ -49,22 +68,6 @@ export class MainPanel extends Component {
       },
       () => this.handleSearchMessages(),
     );
-  };
-
-  addMessagesListener = chatRoomId => {
-    // 방마다 리스너를 달아야됨
-    let messagesArray = [];
-
-    this.state.messagesRef
-      .child(`${chatRoomId}/message`)
-      .on('child_added', DataSnapshot => {
-        messagesArray.push(DataSnapshot.val());
-        this.setState({
-          message: messagesArray,
-          isLoading: false,
-        });
-        this.postCounter(messagesArray);
-      });
   };
 
   renderMessages = message => {
@@ -92,6 +95,22 @@ export class MainPanel extends Component {
     this.props.dispatch(setUserPosts(userPosts));
   };
 
+  addMessagesListener = chatRoomId => {
+    // 방마다 리스너를 달아야됨
+    let messagesArray = [];
+
+    this.state.messagesRef
+      .child(`${chatRoomId}/message`)
+      .on('child_added', DataSnapshot => {
+        messagesArray.push(DataSnapshot.val());
+        this.setState({
+          message: messagesArray,
+          isLoading: false,
+        });
+        this.postCounter(messagesArray);
+      });
+  };
+
   addTypingListener = chatRoomId => {
     let typingUsers = [];
     this.state.typingRef.child(chatRoomId).on('child_added', snapshot => {
@@ -105,6 +124,8 @@ export class MainPanel extends Component {
       this.setState({ typingUsers });
     });
 
+    this.addToListenerLists(chatRoomId, this.state.typingRef, 'child_added');
+
     this.state.typingRef.child(chatRoomId).on('child_removed', snapshot => {
       // child_removed인 유저 정보 가져오기
       let index = typingUsers.findIndex(user => snapshot.key === user.id);
@@ -113,12 +134,38 @@ export class MainPanel extends Component {
         this.setState({ typingUsers });
       }
     });
+    this.addToListenerLists(chatRoomId, this.state.typingRef, 'child_removed');
+  };
+
+  addToListenerLists = (id, ref, event) => {
+    // 등록된 리스너 인지 확인
+    const index = this.state.listerLists?.findIndex(item => {
+      return item.id === id && item.ref === ref && item.event === event;
+    });
+    if (index === -1) {
+      const newListener = {
+        id: id,
+        ref: ref,
+        event: event,
+      };
+
+      this.setState({
+        listerLists: this.state.listerLists.concat(newListener),
+      });
+    }
+  };
+
+  renderTypingUsers = typingUsers => {
+    return (
+      typingUsers.length > 0 &&
+      typingUsers.map(user => {
+        console.log('입력중');
+        return <span key={user.name}>{user.name}님이 입력 중입니다.</span>;
+      })
+    );
   };
 
   render() {
-    console.log('post count', this.state.postCounts);
-    console.log('typing users', this.state.typingUsers);
-
     const { message, searchTerm, searchResults } = this.state;
     console.log('main panel rendered');
     return (
@@ -139,8 +186,9 @@ export class MainPanel extends Component {
           {searchTerm
             ? this.renderMessages(searchResults)
             : this.renderMessages(message)}
+          {this.renderTypingUsers(this.state.typingUsers)}
+          <div ref={this.scrollRef} />
         </div>
-
         <MessageForm />
       </div>
     );
