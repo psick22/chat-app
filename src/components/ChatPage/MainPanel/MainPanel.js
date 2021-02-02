@@ -191,6 +191,7 @@ export class MainPanel extends Component {
           padding: '2rem 2rem 0 2rem',
           display: 'flex',
           width: '100%',
+          minWidth: '300px',
           flexDirection: 'column',
         }}
       >

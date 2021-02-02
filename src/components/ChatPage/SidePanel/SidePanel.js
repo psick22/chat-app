@@ -15,7 +15,7 @@ function SidePanel() {
         padding: '2rem',
         minHeight: '100vh',
         color: 'white',
-        width: '220px',
+        minWidth: '220px',
       }}
     >
       <UserPanel />

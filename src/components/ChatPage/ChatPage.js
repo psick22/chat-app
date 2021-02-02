@@ -8,7 +8,7 @@ function ChatPage() {
   const currentChatRoom = useSelector(state => state.chatRoom.currentChatRoom);
   return (
     <div style={{ display: 'flex' }}>
-      <div style={{ display: 'flex' }}>
+      <div style={{ display: 'flex', width: '220px' }}>
         <SidePanel key={currentUser?.uid} />
       </div>
       <div style={{ display: 'flex', width: '100%' }}>

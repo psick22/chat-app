@@ -43,7 +43,7 @@ function MessageForm() {
 
     if (fileUrl !== null) {
       message['files'] = fileUrl;
-      message['content'] = `${fileUrl}\n` + text;
+      message['content'] = text;
     }
 
     return { userInfo, message };
