@@ -75,6 +75,7 @@ export class ChatRooms extends Component {
     notifications,
     DataSnapshot,
   ) => {
+    console.log('handle notification');
     let lastTotal = 0;
     // 이미 notifications state 안에 정보가 있는 채팅방과 그렇지 않은 채팅방 구분해야함
     let index =
@@ -148,6 +149,7 @@ export class ChatRooms extends Component {
     let count = 0;
     this.state.notifications.forEach(notification => {
       if (notification.id === room.id) {
+        console.log(notification.count);
         count = notification.count;
       }
     });
@@ -209,7 +211,7 @@ export class ChatRooms extends Component {
           }}
         >
           <FaRegSmileWink style={{ marginRight: 3 }} />
-          공개 채팅방{''} (1)
+          공개 채팅방
           <FaPlus
             onClick={this.handleShow}
             style={{ position: 'absolute', right: 0, cursor: 'pointer' }}

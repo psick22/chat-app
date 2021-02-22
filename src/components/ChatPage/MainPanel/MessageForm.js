@@ -202,10 +202,10 @@ function MessageForm() {
 
     if (text) {
       typingRef
-        .child(`${currentChatRoom.id}/${currentUser.uid}`)
-        .set(currentUser.displayName);
+        .child(`${currentChatRoom?.id}/${currentUser.uid}`)
+        .set(currentUser?.displayName);
     } else {
-      typingRef.child(`${currentChatRoom.id}/${currentUser.uid}`).remove();
+      typingRef.child(`${currentChatRoom?.id}/${currentUser.uid}`).remove();
     }
   };
 

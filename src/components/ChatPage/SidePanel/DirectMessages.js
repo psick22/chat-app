@@ -98,7 +98,7 @@ export class DirectMessages extends Component {
           }}
         >
           <FaRegSmileWink style={{ marginRight: 3 }} />
-          개인 메시지{''} (1)
+          개인 메시지
         </div>
         <ul style={{ listStyleType: 'none', padding: 0 }}>
           {this.renderDirectMessages(this.state.usersArray)}

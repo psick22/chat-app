@@ -25,7 +25,7 @@ function UserPanel() {
 
   const handleUploadImage = async e => {
     const files = e.target.files[0];
-    console.log(files.type);
+    console.log(files?.type);
     const metadata = { contentType: files.type };
 
     try {
@@ -57,7 +57,7 @@ function UserPanel() {
     <div>
       {/* logo */}
       <h3 style={{ color: 'white' }}>
-        <IoIosChatboxes /> Chat App
+        <IoIosChatboxes /> Psick Talk
       </h3>
       <div style={{ display: 'flex', marginBottom: '1rem' }}>
         <Image
